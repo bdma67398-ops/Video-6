@@ -1,0 +1,6 @@
+{
+  "name": "ভিডিও দেখে আয় করুন",
+  "description": "ভিডিও দেখে আয় করার ফ্রন্ট পেজ প্ল্যাটফর্ম - ভিডিও task সম্পূর্ণ করে bKash ও Nagad-এ reward উত্তোলন করুন।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
