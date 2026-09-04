@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   ShieldAlert,
-  Users,
+  
   CreditCard,
   Video,
   Settings,
@@ -41,6 +41,7 @@ import {
   EyeOff,
   User
 } from 'lucide-react';
+import { uploadImageDataUrl } from '../lib/supabase';
 import { VideoTask, Transaction, UserProfile, PlatformSettings, AdControlSettings, AdItem } from '../types';
 import { PROFITABLE_AD_LINKS } from '../data/initialData';
 
@@ -385,37 +386,64 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
-  // UNLIMITED BULK IMAGE FILES UPLOAD HANDLER
-  const handleBulkFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  c// UNLIMITED BULK IMAGE FILES UPLOAD HANDLER
+const handleBulkFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = e.target.files;
 
-    setIsBulkUploading(true);
-    setBulkUploadSuccessMsg('');
+  if (!files || files.length === 0) return;
 
-    const loadedFiles: { name: string; url: string }[] = [];
+  setIsBulkUploading(true);
+  setBulkUploadSuccessMsg('');
 
+  const loadedFiles: { name: string; url: string }[] = [];
+
+  try {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const dataUrl = await new Promise<string>((resolve) => {
+
+      if (!file.type.startsWith('image/')) {
+        continue;
+      }
+
+      const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = (ev) => resolve(ev.target?.result as string || '');
+
+        reader.onload = () => {
+          resolve((reader.result as string) || '');
+        };
+
+        reader.onerror = () => {
+          reject(new Error(`ছবি পড়তে সমস্যা হয়েছে: ${file.name}`));
+        };
+
         reader.readAsDataURL(file);
       });
 
       if (dataUrl) {
         loadedFiles.push({
-          name: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
+          name: file.name
+            .replace(/\.[^/.]+$/, '')
+            .replace(/[-_]/g, ' '),
           url: dataUrl,
         });
       }
     }
 
     setBulkUploadedFiles((prev) => [...loadedFiles, ...prev]);
-    setIsBulkUploading(false);
-    setBulkUploadSuccessMsg(`🎉 ${loadedFiles.length}টি ছবি সফলভাবে লোড হয়েছে! নিচের "এখনই সব ছবি পাবলিশ করুন" বাটনে ক্লিক করুন।`);
-  };
 
+    setBulkUploadSuccessMsg(
+      `🎉 ${loadedFiles.length}টি ছবি সফলভাবে লোড হয়েছে! নিচের "এখনই সব ছবি পাবলিশ করুন" বাটনে ক্লিক করুন।`
+    );
+  } catch (error) {
+    console.error('Bulk image loading error:', error);
+
+    setBulkUploadSuccessMsg(
+      '❌ ছবি লোড করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।'
+    );
+  } finally {
+    setIsBulkUploading(false);
+  }
+};
   // SUBMIT ALL BULK IMAGES TO LIVE TASKS
   const handlePublishAllBulkImages = () => {
     const sampleVideos = [
